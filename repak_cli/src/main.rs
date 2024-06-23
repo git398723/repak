@@ -1,5 +1,6 @@
+use std::string::String;
 use std::collections::BTreeMap;
-use std::fs::{self, File};
+use std::fs::{self, File, read_dir};
 use std::io::{self, BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 
@@ -311,7 +312,31 @@ impl Output {
 }
 
 fn unpack(aes_key: Option<aes::Aes256>, action: ActionUnpack) -> Result<(), repak::Error> {
-    for input in &action.input {
+    let mut paks: Vec<String> = vec![];
+    if action.input.first().unwrap().ends_with("\\") || action.input.first().unwrap().ends_with("/"){
+        match read_dir(&action.input.first().unwrap()) {
+            Ok(entries) => {
+                for entry in entries {
+                    match entry {
+                        Ok(entry) => {
+                            let current_path = entry.path();
+                            let ext = current_path.extension();
+                            if ext.is_some() && ext.unwrap().to_os_string() == "pak" {
+                                let path = entry.path().as_mut_os_str().to_os_string();
+                                paks.push(path.into_string().unwrap());
+                            }
+                        },
+                        Err(_) => {}
+                    }
+                }
+            }
+            Err(e) => eprintln!("Error: {}", e)
+        }
+    } else {
+        paks = action.input;
+    }
+
+    for input in &paks {
         let mut builder = repak::PakBuilder::new();
         if let Some(aes_key) = aes_key.clone() {
             builder = builder.key(aes_key);
@@ -325,7 +350,7 @@ fn unpack(aes_key: Option<aes::Aes256>, action: ActionUnpack) -> Result<(), repa
         match fs::create_dir(&output) {
             Ok(_) => Ok(()),
             Err(ref e)
-                if action.output.is_some() && e.kind() == std::io::ErrorKind::AlreadyExists =>
+                if action.output.is_some() && e.kind() == io::ErrorKind::AlreadyExists =>
             {
                 Ok(())
             }

@@ -56,6 +56,13 @@ $ repak --aes-key 0x12345678 unpack MyEncryptedGame.pak
 Unpacked 12345 files to MyEncryptedGame from MyEncryptedGame.pak
 ```
 
+```console
+$ repak --aes-key 0x12345678 unpack myGame/
+Unpacked 12345 files to MyEncryptedGame from MyEncryptedGame1.pak
+Unpacked 12345 files to MyEncryptedGame from MyEncryptedGame2.pak
+```
+
+
 ## compatibility
 
 | UE Version   | Version | Version Feature       | Read               | Write                  |
